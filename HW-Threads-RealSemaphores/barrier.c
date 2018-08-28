@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-#include "common_threads.h"
+#include <semaphore.h>
+#include <pthread.h>
 
 // If done correctly, each child should print their "before" message
 // before either prints their "after" message. Test by adding sleep(1)
@@ -13,7 +13,8 @@
 // other integers to track things.
 
 typedef struct __barrier_t {
-    // add semaphores and other information here
+    sem_t fin;
+    int num_threads;
 } barrier_t;
 
 
@@ -21,11 +22,18 @@ typedef struct __barrier_t {
 barrier_t b;
 
 void barrier_init(barrier_t *b, int num_threads) {
-    // initialization code goes here
+    b->num_threads = num_threads;
+    sem_init(&b->fin, 0, 0);
 }
 
 void barrier(barrier_t *b) {
-    // barrier code goes here
+    b->num_threads--;
+    if (b->num_threads > 0) {
+        sem_wait(&b->fin);
+        sem_post(&b->fin);
+    } else {
+        sem_post(&b->fin);
+    }
 }
 
 //
@@ -60,11 +68,11 @@ int main(int argc, char *argv[]) {
     int i;
     for (i = 0; i < num_threads; i++) {
 	t[i].thread_id = i;
-	Pthread_create(&p[i], NULL, child, &t[i]);
+	pthread_create(&p[i], NULL, child, &t[i]);
     }
 
     for (i = 0; i < num_threads; i++) 
-	Pthread_join(p[i], NULL);
+	pthread_join(p[i], NULL);
 
     printf("parent: end\n");
     return 0;
