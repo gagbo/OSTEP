@@ -14,6 +14,7 @@
 
 typedef struct __barrier_t {
     sem_t fin;
+    sem_t lock;
     int num_threads;
 } barrier_t;
 
@@ -24,10 +25,13 @@ barrier_t b;
 void barrier_init(barrier_t *b, int num_threads) {
     b->num_threads = num_threads;
     sem_init(&b->fin, 0, 0);
+    sem_init(&b->lock, 0, 1);
 }
 
 void barrier(barrier_t *b) {
+    sem_wait(&b->lock);
     b->num_threads--;
+    sem_post(&b->lock);
     if (b->num_threads > 0) {
         sem_wait(&b->fin);
         sem_post(&b->fin);
